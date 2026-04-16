@@ -1,5 +1,6 @@
 package com.issuetracker.service.impl;
 
+import com.issuetracker.dto.response.ProjectResponse;
 import com.issuetracker.entity.Project;
 import com.issuetracker.entity.User;
 import com.issuetracker.exception.ProjectNotFoundException;
@@ -10,7 +11,6 @@ import com.issuetracker.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -20,29 +20,50 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
 
+    // ✅ Create Project
     @Override
-    public Project createProject(Project project, Long userId) {
+    public ProjectResponse createProject(String name, String description, Long userId) {
 
-        User owner = userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        project.setOwner(owner);
+        Project project = new Project();
+        project.setName(name);
+        project.setDescription(description);
+        project.setOwner(user);
+        project.getMembers().add(user); // owner = member
 
-        // add owner to members
-        project.setMembers(new HashSet<>());
-        project.getMembers().add(owner);
+        Project saved = projectRepository.save(project);
 
-        return projectRepository.save(project);
+        return mapToResponse(saved);
     }
 
+    // ✅ Get User Projects
     @Override
-    public List<Project> getUserProjects(Long userId) {
-        return projectRepository.findByOwnerId(userId);
+    public List<ProjectResponse> getUserProjects(Long userId) {
+
+        return projectRepository.findByMembers_Id(userId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
+    // ✅ Get Project
     @Override
-    public Project getProject(Long projectId) {
-        return projectRepository.findById(projectId)
+    public ProjectResponse getProject(Long projectId) {
+
+        Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+
+        return mapToResponse(project);
+    }
+
+    // 🔁 Mapping
+    private ProjectResponse mapToResponse(Project project) {
+        return ProjectResponse.builder()
+                .id(project.getId())
+                .name(project.getName())
+                .description(project.getDescription())
+                .build();
     }
 }

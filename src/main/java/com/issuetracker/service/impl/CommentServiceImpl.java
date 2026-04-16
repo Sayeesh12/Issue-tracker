@@ -1,5 +1,6 @@
 package com.issuetracker.service.impl;
 
+import com.issuetracker.dto.response.CommentResponse;
 import com.issuetracker.entity.Comment;
 import com.issuetracker.entity.Issue;
 import com.issuetracker.entity.User;
@@ -22,8 +23,9 @@ public class CommentServiceImpl implements CommentService {
     private final IssueRepository issueRepository;
     private final UserRepository userRepository;
 
+    // ✅ Add Comment
     @Override
-    public Comment addComment(Long issueId, Long userId, String content) {
+    public CommentResponse addComment(Long issueId, Long userId, String content) {
 
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
@@ -31,17 +33,36 @@ public class CommentServiceImpl implements CommentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        Comment comment = Comment.builder()
-                .content(content)
-                .issue(issue)
-                .author(user)
-                .build();
+        Comment comment = new Comment();
+        comment.setContent(content);
+        comment.setIssue(issue);
+        comment.setAuthor(user);
 
-        return commentRepository.save(comment);
+        Comment saved = commentRepository.save(comment);
+
+        return mapToResponse(saved);
     }
 
+    // ✅ Get Comments
     @Override
-    public List<Comment> getComments(Long issueId) {
-        return commentRepository.findByIssueId(issueId);
+    public List<CommentResponse> getComments(Long issueId) {
+
+        List<Comment> comments = commentRepository.findByIssueId(issueId);
+
+        return comments.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // 🔁 Mapping
+    private CommentResponse mapToResponse(Comment comment) {
+        return CommentResponse.builder()
+                .id(comment.getId())
+                .content(comment.getContent())
+                .authorId(comment.getAuthor().getId())
+                .authorName(comment.getAuthor().getName())
+                .issueId(comment.getIssue().getId())
+                .createdAt(comment.getCreatedAt())
+                .build();
     }
 }

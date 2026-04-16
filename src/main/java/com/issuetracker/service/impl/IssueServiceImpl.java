@@ -1,5 +1,6 @@
 package com.issuetracker.service.impl;
 
+import com.issuetracker.dto.response.IssueResponse;
 import com.issuetracker.entity.Issue;
 import com.issuetracker.entity.Project;
 import com.issuetracker.entity.User;
@@ -26,35 +27,46 @@ public class IssueServiceImpl implements IssueService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
 
-    
     // ✅ Create Issue
     @Override
-    public Issue createIssue(Issue issue, Long creatorId, Long projectId) {
+    public IssueResponse createIssue(String title, String description, Long projectId, Long userId) {
 
-        User creator = userRepository.findById(creatorId)
+        User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
 
-        // 🔥 Validate creator is part of project
         boolean isMember = projectRepository
-                .existsByIdAndMembers_Id(projectId, creatorId);
+                .existsByIdAndMembers_Id(projectId, userId);
 
         if (!isMember) {
             throw new UnauthorizedActionException("User not part of project");
         }
 
-        issue.setCreator(creator);              // 🔥 IMPORTANT
+        Issue issue = new Issue();
+        issue.setTitle(title);
+        issue.setDescription(description);
+        issue.setType(com.issuetracker.enums.IssueType.BUG); // or pass from DTO
+        issue.setCreator(creator);
         issue.setProject(project);
         issue.setStatus(IssueStatus.OPEN);
 
-        return issueRepository.save(issue);
-    }
+        Issue saved = issueRepository.save(issue);
 
-    // ✅ Assign Issue
+        return mapToResponse(saved);
+    }
     @Override
-    public Issue assignIssue(Long issueId, Long userId) {
+    public IssueResponse getIssueById(Long issueId) {
+
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
+
+        return mapToResponse(issue);
+    }
+    // ✅ Assign
+    @Override
+    public IssueResponse assignIssue(Long issueId, Long userId) {
 
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
@@ -62,7 +74,6 @@ public class IssueServiceImpl implements IssueService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        // 🔥 Validate user belongs to project
         boolean isMember = projectRepository
                 .existsByIdAndMembers_Id(issue.getProject().getId(), userId);
 
@@ -72,17 +83,16 @@ public class IssueServiceImpl implements IssueService {
 
         issue.setAssignee(user);
 
-        return issueRepository.save(issue);
+        return mapToResponse(issueRepository.save(issue));
     }
 
-    // ✅ Update Status (Workflow + Ownership)
+    // ✅ Update Status
     @Override
-    public Issue updateStatus(Long issueId, IssueStatus status, Long userId) {
+    public IssueResponse updateStatus(Long issueId, IssueStatus status, Long userId) {
 
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
 
-        // 🔥 Only assignee can update
         if (issue.getAssignee() == null ||
                 !issue.getAssignee().getId().equals(userId)) {
             throw new UnauthorizedActionException("Only assignee can update status");
@@ -90,44 +100,47 @@ public class IssueServiceImpl implements IssueService {
 
         IssueStatus current = issue.getStatus();
 
-        // 🔥 Workflow validation
         if (current == IssueStatus.OPEN && status == IssueStatus.DONE) {
-            throw new InvalidStatusTransitionException("Cannot move OPEN → DONE directly");
+            throw new InvalidStatusTransitionException("Invalid transition");
         }
 
         if (current == IssueStatus.DONE) {
-            throw new InvalidStatusTransitionException("Issue already completed");
+            throw new InvalidStatusTransitionException("Already completed");
         }
 
         if (current == IssueStatus.IN_PROGRESS && status == IssueStatus.OPEN) {
-            throw new InvalidStatusTransitionException("Cannot move back to OPEN");
+            throw new InvalidStatusTransitionException("Cannot revert");
         }
 
         issue.setStatus(status);
 
-        return issueRepository.save(issue);
+        return mapToResponse(issueRepository.save(issue));
     }
 
-    // ✅ Get Issues by Project (Paginated)
+    // ✅ Project Issues
     @Override
-    public Page<Issue> getProjectIssues(Long projectId, int page, int size) {
+    public Page<IssueResponse> getProjectIssues(Long projectId, int page, int size) {
 
-        // Optional validation (good practice)
-        if (!projectRepository.existsById(projectId)) {
-            throw new ProjectNotFoundException("Project not found");
-        }
-
-        return issueRepository.findByProjectId(projectId, PageRequest.of(page, size));
+        return issueRepository.findByProjectId(projectId, PageRequest.of(page, size))
+                .map(this::mapToResponse);
     }
 
-    // ✅ Get My Issues (Paginated)
+    // ✅ My Issues
     @Override
-    public Page<Issue> getMyIssues(Long userId, int page, int size) {
+    public Page<IssueResponse> getMyIssues(Long userId, int page, int size) {
 
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException("User not found");
-        }
+        return issueRepository.findByAssigneeId(userId, PageRequest.of(page, size))
+                .map(this::mapToResponse);
+    }
 
-        return issueRepository.findByAssigneeId(userId, PageRequest.of(page, size));
+    // 🔁 Mapping
+    private IssueResponse mapToResponse(Issue issue) {
+        return IssueResponse.builder()
+                .id(issue.getId())
+                .title(issue.getTitle())
+                .description(issue.getDescription())
+                .type(issue.getType())
+                .status(issue.getStatus())
+                .build();
     }
 }

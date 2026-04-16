@@ -1,14 +1,14 @@
 package com.issuetracker.service;
 
-import com.issuetracker.entity.Project;
+import com.issuetracker.dto.response.ProjectResponse;
 
 import java.util.List;
 
 public interface ProjectService {
 
-    Project createProject(Project project, Long userId);
+    ProjectResponse createProject(String name, String description, Long userId);
 
-    List<Project> getUserProjects(Long userId);
+    List<ProjectResponse> getUserProjects(Long userId);
 
-    Project getProject(Long projectId);
+    ProjectResponse getProject(Long projectId);
 }

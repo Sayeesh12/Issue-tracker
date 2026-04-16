@@ -1,6 +1,5 @@
 package com.issuetracker.dto.request;
 
-import com.issuetracker.enums.IssueType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -14,9 +13,6 @@ public class CreateIssueRequest {
     private String title;
 
     private String description;
-
-    @NotNull
-    private IssueType type;
 
     @NotNull
     private Long projectId;

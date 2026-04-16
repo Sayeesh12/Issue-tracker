@@ -1,12 +1,12 @@
 package com.issuetracker.service;
 
-import com.issuetracker.entity.Comment;
+import com.issuetracker.dto.response.CommentResponse;
 
 import java.util.List;
 
 public interface CommentService {
 
-    Comment addComment(Long issueId, Long userId, String content);
+    CommentResponse addComment(Long issueId, Long userId, String content);
 
-    List<Comment> getComments(Long issueId);
+    List<CommentResponse> getComments(Long issueId);
 }

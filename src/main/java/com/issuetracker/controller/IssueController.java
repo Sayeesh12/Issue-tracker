@@ -1,6 +1,7 @@
 package com.issuetracker.controller;
 
-import com.issuetracker.entity.Issue;
+import com.issuetracker.dto.request.CreateIssueRequest;
+import com.issuetracker.dto.response.IssueResponse;
 import com.issuetracker.enums.IssueStatus;
 import com.issuetracker.exception.UserNotFoundException;
 import com.issuetracker.repository.UserRepository;
@@ -17,22 +18,27 @@ import org.springframework.web.bind.annotation.*;
 public class IssueController {
 
     private final IssueService issueService;
-    private final UserRepository userRepository; // 🔥 REQUIRED
+    private final UserRepository userRepository;
 
     // ✅ Create Issue
     @PostMapping
-    public Issue createIssue(
-            @Valid @RequestBody Issue issue,
-            @RequestParam Long projectId,
+    public IssueResponse createIssue(
+            @Valid @RequestBody CreateIssueRequest request,
             Authentication auth
     ) {
         Long userId = getUserId(auth);
-        return issueService.createIssue(issue, userId, projectId);
+
+        return issueService.createIssue(
+                request.getTitle(),
+                request.getDescription(),
+                request.getProjectId(),
+                userId
+        );
     }
 
     // ✅ Assign Issue
     @PatchMapping("/{id}/assign")
-    public Issue assignIssue(
+    public IssueResponse assignIssue(
             @PathVariable Long id,
             @RequestParam Long userId
     ) {
@@ -41,7 +47,7 @@ public class IssueController {
 
     // ✅ Update Status
     @PatchMapping("/{id}/status")
-    public Issue updateStatus(
+    public IssueResponse updateStatus(
             @PathVariable Long id,
             @RequestParam IssueStatus status,
             Authentication auth
@@ -50,9 +56,9 @@ public class IssueController {
         return issueService.updateStatus(id, status, userId);
     }
 
-    // ✅ Get Project Issues (Paginated)
+    // ✅ Get Project Issues
     @GetMapping("/project/{projectId}")
-    public Page<Issue> getProjectIssues(
+    public Page<IssueResponse> getProjectIssues(
             @PathVariable Long projectId,
             @RequestParam int page,
             @RequestParam int size
@@ -62,7 +68,7 @@ public class IssueController {
 
     // ✅ Get My Issues
     @GetMapping("/my")
-    public Page<Issue> getMyIssues(
+    public Page<IssueResponse> getMyIssues(
             @RequestParam int page,
             @RequestParam int size,
             Authentication auth
@@ -71,12 +77,15 @@ public class IssueController {
         return issueService.getMyIssues(userId, page, size);
     }
 
-    // 🔥 CORRECT USER EXTRACTION FROM JWT
+    // 🔥 JWT → userId
     private Long getUserId(Authentication auth) {
         String email = auth.getName();
-
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found"))
                 .getId();
+    }
+    @GetMapping("/{id}")
+    public IssueResponse getIssue(@PathVariable Long id) {
+        return issueService.getIssueById(id);
     }
 }

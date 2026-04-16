@@ -4,15 +4,16 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@Table(name = "projects")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "projects")
 public class Project extends BaseEntity {
 
     @NotBlank
@@ -21,17 +22,18 @@ public class Project extends BaseEntity {
 
     private String description;
 
-    // Owner of project
+    // 🔥 Owner of project
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    // Optional but strong feature
+    // 🔥 Project members (team collaboration)
+    @Builder.Default
     @ManyToMany
     @JoinTable(
             name = "project_members",
             joinColumns = @JoinColumn(name = "project_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private Set<User> members;
+    private Set<User> members = new HashSet<>();
 }
