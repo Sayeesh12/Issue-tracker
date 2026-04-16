@@ -1,0 +1,60 @@
+### Build ###
+target/
+build/
+
+### Maven Wrapper ###
+.mvn/wrapper/maven-wrapper.jar
+
+### Logs ###
+*.log
+
+### OS Files ###
+.DS_Store
+Thumbs.db
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### Eclipse / STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Compiled Files ###
+*.class
+
+### Environment / Secrets (IMPORTANT) ###
+application.properties
+application.yml
+application-*.properties
+application-*.yml
+
+.env
+
+### Keep example config ###
+!application.properties.example
+
+### Optional: Test reports ###
+/test-output/
+/surefire-reports/
+
+### Optional: coverage ###
+/coverage/
+/jacoco.exec
