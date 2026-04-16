@@ -1,4 +1,12 @@
 package com.issuetracker.service.auth;
 
-public class AuthService {
+import com.issuetracker.dto.request.LoginRequest;
+import com.issuetracker.dto.request.RegisterRequest;
+import com.issuetracker.dto.response.AuthResponse;
+
+public interface AuthService {
+
+    AuthResponse register(RegisterRequest request);
+
+    AuthResponse login(LoginRequest request);
 }
