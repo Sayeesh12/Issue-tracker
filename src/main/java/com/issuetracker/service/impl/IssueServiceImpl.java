@@ -26,6 +26,7 @@ public class IssueServiceImpl implements IssueService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
 
+    
     // ✅ Create Issue
     @Override
     public Issue createIssue(Issue issue, Long creatorId, Long projectId) {

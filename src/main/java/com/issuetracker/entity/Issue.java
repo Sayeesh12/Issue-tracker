@@ -27,10 +27,9 @@ public class Issue extends BaseEntity {
     @Column(nullable = false)
     private IssueType type;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private IssueStatus status = IssueStatus.OPEN;
+    private IssueStatus status;
 
     // Creator of issue
     @ManyToOne(fetch = FetchType.LAZY)

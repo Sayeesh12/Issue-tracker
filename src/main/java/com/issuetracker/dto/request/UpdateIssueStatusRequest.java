@@ -1,17 +1,14 @@
 package com.issuetracker.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import com.issuetracker.enums.IssueStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class AddCommentRequest {
+public class UpdateIssueStatusRequest {
 
     @NotNull
-    private Long issueId;
-
-    @NotBlank
-    private String content;
+    private IssueStatus status;
 }
