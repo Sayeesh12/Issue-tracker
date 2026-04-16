@@ -20,7 +20,7 @@ public class ProjectController {
     private final ProjectService projectService;
     private final UserRepository userRepository;
 
-    // ✅ Create Project
+
     @PostMapping
     public ProjectResponse createProject(
             @Valid @RequestBody CreateProjectRequest request,
@@ -35,20 +35,20 @@ public class ProjectController {
         );
     }
 
-    // ✅ Get My Projects
+
     @GetMapping
     public List<ProjectResponse> getProjects(Authentication auth) {
         Long userId = getUserId(auth);
         return projectService.getUserProjects(userId);
     }
 
-    // ✅ Get Single Project
+
     @GetMapping("/{id}")
     public ProjectResponse getProject(@PathVariable Long id) {
         return projectService.getProject(id);
     }
 
-    // 🔥 JWT → userId
+
     private Long getUserId(Authentication auth) {
         String email = auth.getName();
         return userRepository.findByEmail(email)

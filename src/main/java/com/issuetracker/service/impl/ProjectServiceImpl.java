@@ -20,7 +20,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
 
-    // ✅ Create Project
+
     @Override
     public ProjectResponse createProject(String name, String description, Long userId) {
 
@@ -38,7 +38,7 @@ public class ProjectServiceImpl implements ProjectService {
         return mapToResponse(saved);
     }
 
-    // ✅ Get User Projects
+
     @Override
     public List<ProjectResponse> getUserProjects(Long userId) {
 
@@ -48,7 +48,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .toList();
     }
 
-    // ✅ Get Project
+
     @Override
     public ProjectResponse getProject(Long projectId) {
 
@@ -58,7 +58,7 @@ public class ProjectServiceImpl implements ProjectService {
         return mapToResponse(project);
     }
 
-    // 🔁 Mapping
+
     private ProjectResponse mapToResponse(Project project) {
         return ProjectResponse.builder()
                 .id(project.getId())

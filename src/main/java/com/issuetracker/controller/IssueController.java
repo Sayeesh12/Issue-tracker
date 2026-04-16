@@ -66,7 +66,7 @@ public class IssueController {
         return issueService.getProjectIssues(projectId, page, size);
     }
 
-    // ✅ Get My Issues
+
     @GetMapping("/my")
     public Page<IssueResponse> getMyIssues(
             @RequestParam int page,
@@ -77,7 +77,7 @@ public class IssueController {
         return issueService.getMyIssues(userId, page, size);
     }
 
-    // 🔥 JWT → userId
+
     private Long getUserId(Authentication auth) {
         String email = auth.getName();
         return userRepository.findByEmail(email)

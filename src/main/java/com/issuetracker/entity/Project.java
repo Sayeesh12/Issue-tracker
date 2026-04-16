@@ -22,12 +22,12 @@ public class Project extends BaseEntity {
 
     private String description;
 
-    // 🔥 Owner of project
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    // 🔥 Project members (team collaboration)
+
     @Builder.Default
     @ManyToMany
     @JoinTable(

@@ -20,7 +20,7 @@ public class CommentController {
     private final CommentService commentService;
     private final UserRepository userRepository;
 
-    // ✅ Add Comment
+
     @PostMapping
     public CommentResponse addComment(
             @Valid @RequestBody AddCommentRequest request,
@@ -35,13 +35,13 @@ public class CommentController {
         );
     }
 
-    // ✅ Get Comments
+
     @GetMapping("/{issueId}")
     public List<CommentResponse> getComments(@PathVariable Long issueId) {
         return commentService.getComments(issueId);
     }
 
-    // 🔥 JWT → userId
+
     private Long getUserId(Authentication auth) {
         String email = auth.getName();
         return userRepository.findByEmail(email)

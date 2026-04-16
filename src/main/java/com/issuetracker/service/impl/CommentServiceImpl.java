@@ -23,7 +23,7 @@ public class CommentServiceImpl implements CommentService {
     private final IssueRepository issueRepository;
     private final UserRepository userRepository;
 
-    // ✅ Add Comment
+
     @Override
     public CommentResponse addComment(Long issueId, Long userId, String content) {
 
@@ -43,7 +43,7 @@ public class CommentServiceImpl implements CommentService {
         return mapToResponse(saved);
     }
 
-    // ✅ Get Comments
+
     @Override
     public List<CommentResponse> getComments(Long issueId) {
 
@@ -54,7 +54,7 @@ public class CommentServiceImpl implements CommentService {
                 .toList();
     }
 
-    // 🔁 Mapping
+
     private CommentResponse mapToResponse(Comment comment) {
         return CommentResponse.builder()
                 .id(comment.getId())

@@ -27,7 +27,7 @@ public class IssueServiceImpl implements IssueService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
 
-    // ✅ Create Issue
+
     @Override
     public IssueResponse createIssue(String title, String description, Long projectId, Long userId) {
 
@@ -64,7 +64,7 @@ public class IssueServiceImpl implements IssueService {
 
         return mapToResponse(issue);
     }
-    // ✅ Assign
+
     @Override
     public IssueResponse assignIssue(Long issueId, Long userId) {
 
@@ -86,7 +86,7 @@ public class IssueServiceImpl implements IssueService {
         return mapToResponse(issueRepository.save(issue));
     }
 
-    // ✅ Update Status
+
     @Override
     public IssueResponse updateStatus(Long issueId, IssueStatus status, Long userId) {
 
@@ -117,7 +117,7 @@ public class IssueServiceImpl implements IssueService {
         return mapToResponse(issueRepository.save(issue));
     }
 
-    // ✅ Project Issues
+
     @Override
     public Page<IssueResponse> getProjectIssues(Long projectId, int page, int size) {
 
@@ -125,7 +125,7 @@ public class IssueServiceImpl implements IssueService {
                 .map(this::mapToResponse);
     }
 
-    // ✅ My Issues
+
     @Override
     public Page<IssueResponse> getMyIssues(Long userId, int page, int size) {
 
@@ -133,7 +133,7 @@ public class IssueServiceImpl implements IssueService {
                 .map(this::mapToResponse);
     }
 
-    // 🔁 Mapping
+
     private IssueResponse mapToResponse(Issue issue) {
         return IssueResponse.builder()
                 .id(issue.getId())
