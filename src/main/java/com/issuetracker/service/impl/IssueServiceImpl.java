@@ -1,15 +1,13 @@
 package com.issuetracker.service.impl;
 
+import com.issuetracker.dto.request.CreateIssueRequest;
 import com.issuetracker.dto.response.IssueResponse;
 import com.issuetracker.entity.Issue;
 import com.issuetracker.entity.Project;
 import com.issuetracker.entity.User;
 import com.issuetracker.enums.IssueStatus;
-import com.issuetracker.exception.IssueNotFoundException;
-import com.issuetracker.exception.InvalidStatusTransitionException;
-import com.issuetracker.exception.ProjectNotFoundException;
-import com.issuetracker.exception.UnauthorizedActionException;
-import com.issuetracker.exception.UserNotFoundException;
+import com.issuetracker.exception.*;
+import com.issuetracker.mapper.IssueMapper;
 import com.issuetracker.repository.IssueRepository;
 import com.issuetracker.repository.ProjectRepository;
 import com.issuetracker.repository.UserRepository;
@@ -18,51 +16,53 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class IssueServiceImpl implements IssueService {
 
     private final IssueRepository issueRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
-
+    private final IssueMapper issueMapper;
 
     @Override
-    public IssueResponse createIssue(String title, String description, Long projectId, Long userId) {
+    public IssueResponse createIssue(CreateIssueRequest request, Long userId) {
 
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
 
         boolean isMember = projectRepository
-                .existsByIdAndMembers_Id(projectId, userId);
+                .existsByIdAndMembers_Id(request.getProjectId(), userId);
 
         if (!isMember) {
             throw new UnauthorizedActionException("User not part of project");
         }
 
-        Issue issue = new Issue();
-        issue.setTitle(title);
-        issue.setDescription(description);
-        issue.setType(com.issuetracker.enums.IssueType.BUG); // or pass from DTO
+        // ✅ use mapper
+        Issue issue = issueMapper.toEntity(request);
+
+        // ✅ relationships (service responsibility)
         issue.setCreator(creator);
         issue.setProject(project);
-        issue.setStatus(IssueStatus.OPEN);
 
-        Issue saved = issueRepository.save(issue);
+        Issue saved = issueRepository.save(issue);   // ✅ REQUIRED
 
-        return mapToResponse(saved);
+        return issueMapper.toResponse(saved);
     }
+
     @Override
     public IssueResponse getIssueById(Long issueId) {
 
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
 
-        return mapToResponse(issue);
+        return issueMapper.toResponse(issue);
     }
 
     @Override
@@ -83,9 +83,8 @@ public class IssueServiceImpl implements IssueService {
 
         issue.setAssignee(user);
 
-        return mapToResponse(issueRepository.save(issue));
+        return issueMapper.toResponse(issueRepository.save(issue));
     }
-
 
     @Override
     public IssueResponse updateStatus(Long issueId, IssueStatus status, Long userId) {
@@ -114,33 +113,21 @@ public class IssueServiceImpl implements IssueService {
 
         issue.setStatus(status);
 
-        return mapToResponse(issueRepository.save(issue));
+        return issueMapper.toResponse(issueRepository.save(issue));
     }
-
 
     @Override
     public Page<IssueResponse> getProjectIssues(Long projectId, int page, int size) {
 
         return issueRepository.findByProjectId(projectId, PageRequest.of(page, size))
-                .map(this::mapToResponse);
+                .map(issueMapper::toResponse);
     }
-
 
     @Override
     public Page<IssueResponse> getMyIssues(Long userId, int page, int size) {
 
         return issueRepository.findByAssigneeId(userId, PageRequest.of(page, size))
-                .map(this::mapToResponse);
+                .map(issueMapper::toResponse);
     }
 
-
-    private IssueResponse mapToResponse(Issue issue) {
-        return IssueResponse.builder()
-                .id(issue.getId())
-                .title(issue.getTitle())
-                .description(issue.getDescription())
-                .type(issue.getType())
-                .status(issue.getStatus())
-                .build();
-    }
 }

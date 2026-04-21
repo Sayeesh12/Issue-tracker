@@ -2,11 +2,9 @@ package com.issuetracker.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class CreateIssueRequest {
 
     @NotBlank
@@ -16,4 +14,7 @@ public class CreateIssueRequest {
 
     @NotNull
     private Long projectId;
+
+    @NotNull
+    private String type; // BUG / FEATURE / IMPROVEMENT
 }

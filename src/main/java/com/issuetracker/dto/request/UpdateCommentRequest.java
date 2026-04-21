@@ -1,15 +1,11 @@
 package com.issuetracker.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class AddCommentRequest {
+public class UpdateCommentRequest {
 
     @NotBlank
     private String content;
-
-    @NotNull
-    private Long issueId;
 }

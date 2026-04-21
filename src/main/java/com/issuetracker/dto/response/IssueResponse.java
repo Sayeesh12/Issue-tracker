@@ -14,4 +14,7 @@ public class IssueResponse {
     private String description;
     private IssueType type;
     private IssueStatus status;
+    private Long projectId;
+    private Long creatorId;
+    private Long assigneeId;
 }
