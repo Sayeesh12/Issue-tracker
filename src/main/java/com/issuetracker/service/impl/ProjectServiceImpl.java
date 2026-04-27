@@ -1,72 +1,79 @@
 package com.issuetracker.service.impl;
 
-import com.issuetracker.dto.request.CreateProjectRequest;
+import com.issuetracker.dto.request.ProjectRequest;
 import com.issuetracker.dto.response.ProjectResponse;
 import com.issuetracker.entity.Project;
 import com.issuetracker.entity.User;
 import com.issuetracker.exception.ProjectNotFoundException;
-import com.issuetracker.exception.UserNotFoundException;
+
 import com.issuetracker.mapper.ProjectMapper;
 import com.issuetracker.repository.ProjectRepository;
-import com.issuetracker.repository.UserRepository;
+import com.issuetracker.service.auth.AuthorizationService;
 import com.issuetracker.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
-    private final UserRepository userRepository;
     private final ProjectMapper projectMapper;
+    private final AuthorizationService authorizationService;
 
     @Override
-    public ProjectResponse createProject(CreateProjectRequest request, Long userId) {
-
-        User creator = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+    public ProjectResponse createProject(ProjectRequest request, User user) {
 
         Project project = projectMapper.toEntity(request);
-        project.setOwner(creator);
-        // ✅ creator is always a member
-        HashSet<User> members = new HashSet<>();
-        members.add(creator);
+        project.setOwner(user);
+        project.getMembers().add(user); // owner is always a member
 
-        // ✅ add additional members (if provided)
-        if (request.getMemberIds() != null && !request.getMemberIds().isEmpty()) {
-            List<User> users = userRepository.findAllById(request.getMemberIds());
-            members.addAll(users);
-        }
-
-        project.setMembers(members);
-
-        Project saved = projectRepository.save(project);
-
-        return projectMapper.toResponse(saved);
+        return projectMapper.toResponse(projectRepository.save(project));
     }
 
     @Override
-    public ProjectResponse getProjectById(Long projectId) {
+    public ProjectResponse getProjectById(Long projectId, User user) {
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+
+        authorizationService.canViewProject(user, project);
 
         return projectMapper.toResponse(project);
     }
 
     @Override
-    public List<ProjectResponse> getUserProjects(Long userId) {
-
-        List<Project> projects = projectRepository.findByMembers_Id(userId);
-
-        return projects.stream()
+    public List<ProjectResponse> getUserProjects(User user) {
+        return projectRepository.findByMembersContaining(user)
+                .stream()
                 .map(projectMapper::toResponse)
                 .toList();
+    }
+
+    @Override
+    public ProjectResponse updateProject(Long projectId, ProjectRequest request, User user) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+
+        authorizationService.canUpdateProject(user, project);
+
+        project.setName(request.getName());
+        project.setDescription(request.getDescription());
+
+        return projectMapper.toResponse(projectRepository.save(project));
+    }
+
+    @Override
+    public void deleteProject(Long projectId, User user) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+
+        authorizationService.canDeleteProject(user, project);
+
+        projectRepository.delete(project);
     }
 }

@@ -2,77 +2,92 @@ package com.issuetracker.controller;
 
 import com.issuetracker.dto.request.CreateIssueRequest;
 import com.issuetracker.dto.response.IssueResponse;
+import com.issuetracker.entity.User;
 import com.issuetracker.enums.IssueStatus;
 import com.issuetracker.service.IssueService;
-import com.issuetracker.service.auth.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.security.core.Authentication;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/issues")
+@RequestMapping("/api/issues")
 @RequiredArgsConstructor
 public class IssueController {
 
     private final IssueService issueService;
-    private final AuthService authService;
 
-    // ✅ Create Issue
-    @PostMapping
-    public IssueResponse createIssue(
+    // ---------------- CREATE ISSUE ----------------
+    @PostMapping("/projects/{projectId}")
+    public ResponseEntity<IssueResponse> createIssue(
+            @PathVariable Long projectId,
             @Valid @RequestBody CreateIssueRequest request,
-            Authentication auth
+            @AuthenticationPrincipal User user
     ) {
-        Long userId = authService.getCurrentUserId(auth);
-        return issueService.createIssue(request, userId);
+        return ResponseEntity.ok(
+                issueService.createIssue(projectId, request, user)
+        );
     }
 
-    // ✅ Assign Issue
-    @PatchMapping("/{id}/assign")
-    public IssueResponse assignIssue(
-            @PathVariable Long id,
-            @RequestParam Long userId
+    // ---------------- GET SINGLE ISSUE ----------------
+    @GetMapping("/{issueId}")
+    public ResponseEntity<IssueResponse> getIssue(
+            @PathVariable Long issueId,
+            @AuthenticationPrincipal User user
     ) {
-        return issueService.assignIssue(id, userId);
+        return ResponseEntity.ok(
+                issueService.getIssueById(issueId, user)
+        );
     }
 
-    // ✅ Update Status
-    @PatchMapping("/{id}/status")
-    public IssueResponse updateStatus(
-            @PathVariable Long id,
+    // ---------------- ASSIGN ISSUE ----------------
+    @PatchMapping("/{issueId}/assign")
+    public ResponseEntity<IssueResponse> assignIssue(
+            @PathVariable Long issueId,
+            @RequestParam Long assigneeId,
+            @AuthenticationPrincipal User user
+    ) {
+        return ResponseEntity.ok(
+                issueService.assignIssue(issueId, assigneeId, user)
+        );
+    }
+
+    // ---------------- UPDATE STATUS ----------------
+    @PatchMapping("/{issueId}/status")
+    public ResponseEntity<IssueResponse> updateStatus(
+            @PathVariable Long issueId,
             @RequestParam IssueStatus status,
-            Authentication auth
+            @AuthenticationPrincipal User user
     ) {
-        Long userId = authService.getCurrentUserId(auth);
-        return issueService.updateStatus(id, status, userId);
+        return ResponseEntity.ok(
+                issueService.updateStatus(issueId, status, user)
+        );
     }
 
-    // ✅ Get Project Issues
-    @GetMapping("/project/{projectId}")
-    public Page<IssueResponse> getProjectIssues(
+    // ---------------- GET PROJECT ISSUES (PAGINATED) ----------------
+    @GetMapping("/projects/{projectId}")
+    public ResponseEntity<Page<IssueResponse>> getProjectIssues(
             @PathVariable Long projectId,
             @RequestParam int page,
-            @RequestParam int size
+            @RequestParam int size,
+            @AuthenticationPrincipal User user
     ) {
-        return issueService.getProjectIssues(projectId, page, size);
+        return ResponseEntity.ok(
+                issueService.getProjectIssues(projectId, page, size, user)
+        );
     }
 
-    // ✅ Get My Issues
+    // ---------------- GET MY ISSUES ----------------
     @GetMapping("/my")
-    public Page<IssueResponse> getMyIssues(
+    public ResponseEntity<Page<IssueResponse>> getMyIssues(
             @RequestParam int page,
             @RequestParam int size,
-            Authentication auth
+            @AuthenticationPrincipal User user
     ) {
-        Long userId = authService.getCurrentUserId(auth);
-        return issueService.getMyIssues(userId, page, size);
-    }
-
-    // ✅ Get Single Issue
-    @GetMapping("/{id}")
-    public IssueResponse getIssue(@PathVariable Long id) {
-        return issueService.getIssueById(id);
+        return ResponseEntity.ok(
+                issueService.getMyIssues(user, page, size)
+        );
     }
 }

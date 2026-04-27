@@ -1,29 +1,24 @@
 package com.issuetracker.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Table(name = "comments")
 public class Comment extends BaseEntity {
 
-    @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String content;
 
-    // Comment author
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id", nullable = false)
-    private User author;
+    // ✅ Soft delete flag
+    @Column(nullable = false)
+    private boolean deleted = false;
 
-    // Related issue
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "issue_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Issue issue;
 }

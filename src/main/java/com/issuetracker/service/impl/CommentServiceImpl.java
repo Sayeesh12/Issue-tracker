@@ -1,93 +1,73 @@
 package com.issuetracker.service.impl;
 
 import com.issuetracker.dto.request.AddCommentRequest;
-import com.issuetracker.dto.request.UpdateCommentRequest;
 import com.issuetracker.dto.response.CommentResponse;
 import com.issuetracker.entity.Comment;
 import com.issuetracker.entity.Issue;
 import com.issuetracker.entity.User;
+import com.issuetracker.exception.CommentNotFoundException;
 import com.issuetracker.exception.IssueNotFoundException;
-import com.issuetracker.exception.UserNotFoundException;
-import com.issuetracker.exception.UnauthorizedActionException;
 import com.issuetracker.mapper.CommentMapper;
 import com.issuetracker.repository.CommentRepository;
 import com.issuetracker.repository.IssueRepository;
-import com.issuetracker.repository.UserRepository;
+import com.issuetracker.service.auth.AuthorizationService;
 import com.issuetracker.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
     private final IssueRepository issueRepository;
-    private final UserRepository userRepository;
     private final CommentMapper commentMapper;
+    private final AuthorizationService authorizationService;
 
+    // ---------------- ADD COMMENT ----------------
     @Override
-    public CommentResponse addComment(AddCommentRequest request, Long userId) {
+    public CommentResponse addComment(Long issueId, AddCommentRequest request, User user) {
 
-        Issue issue = issueRepository.findById(request.getIssueId())
+        Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        authorizationService.canComment(user, issue);
 
-        Comment comment = commentMapper.toEntity(request);
-
+        Comment comment = new Comment();
+        comment.setContent(request.getContent());
+        comment.setUser(user);
         comment.setIssue(issue);
-        comment.setAuthor(user);
 
-        Comment saved = commentRepository.save(comment);
-
-        return commentMapper.toResponse(saved);
+        return commentMapper.toResponse(commentRepository.save(comment));
     }
 
+    // ---------------- GET COMMENTS ----------------
     @Override
-    public List<CommentResponse> getCommentsByIssue(Long issueId) {
+    public List<CommentResponse> getCommentsByIssue(Long issueId, User user) {
 
-        return commentRepository.findByIssueId(issueId)
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
+
+        authorizationService.canViewIssue(user, issue);
+
+        return commentRepository.findByIssueIdAndDeletedFalse(issueId)
                 .stream()
                 .map(commentMapper::toResponse)
                 .toList();
     }
 
+    // ---------------- DELETE COMMENT (SOFT DELETE) ----------------
     @Override
-    public CommentResponse updateComment(Long commentId, UpdateCommentRequest request, Long userId) {
+    public void deleteComment(Long commentId, User user) {
 
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new CommentNotFoundException("Comment not found"));
 
-        // ✅ Only author can edit
-        if (!comment.getAuthor().getId().equals(userId)) {
-            throw new UnauthorizedActionException("You can only edit your own comment");
-        }
+        authorizationService.canDeleteComment(user, comment);
 
-        // ✅ mapper update
-        commentMapper.updateEntityFromDto(request, comment);
-
-        Comment updated = commentRepository.save(comment);
-
-        return commentMapper.toResponse(updated);
-    }
-
-    @Override
-    public void deleteComment(Long commentId, Long userId) {
-
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
-
-        // ✅ Only author can delete
-        if (!comment.getAuthor().getId().equals(userId)) {
-            throw new UnauthorizedActionException("You can only delete your own comment");
-        }
-
-        commentRepository.delete(comment);
+        comment.setDeleted(true);
+        commentRepository.save(comment);
     }
 }

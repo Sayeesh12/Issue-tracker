@@ -6,128 +6,133 @@ import com.issuetracker.entity.Issue;
 import com.issuetracker.entity.Project;
 import com.issuetracker.entity.User;
 import com.issuetracker.enums.IssueStatus;
-import com.issuetracker.exception.*;
+import com.issuetracker.exception.IssueNotFoundException;
+import com.issuetracker.exception.ProjectNotFoundException;
+import com.issuetracker.exception.UserNotFoundException;
 import com.issuetracker.mapper.IssueMapper;
 import com.issuetracker.repository.IssueRepository;
 import com.issuetracker.repository.ProjectRepository;
 import com.issuetracker.repository.UserRepository;
+import com.issuetracker.service.auth.AuthorizationService;
 import com.issuetracker.service.IssueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class IssueServiceImpl implements IssueService {
 
     private final IssueRepository issueRepository;
-    private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
     private final IssueMapper issueMapper;
+    private final AuthorizationService authorizationService;
 
+    // ---------------- CREATE ISSUE ----------------
     @Override
-    public IssueResponse createIssue(CreateIssueRequest request, Long userId) {
+    public IssueResponse createIssue(Long projectId, CreateIssueRequest request, User user) {
 
-        User creator = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-        Project project = projectRepository.findById(request.getProjectId())
+        Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
 
-        boolean isMember = projectRepository
-                .existsByIdAndMembers_Id(request.getProjectId(), userId);
+        authorizationService.canCreateIssue(user, project);
 
-        if (!isMember) {
-            throw new UnauthorizedActionException("User not part of project");
-        }
-
-        // ✅ use mapper
         Issue issue = issueMapper.toEntity(request);
-
-        // ✅ relationships (service responsibility)
-        issue.setCreator(creator);
         issue.setProject(project);
-
-        Issue saved = issueRepository.save(issue);   // ✅ REQUIRED
-
-        return issueMapper.toResponse(saved);
-    }
-
-    @Override
-    public IssueResponse getIssueById(Long issueId) {
-
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
-
-        return issueMapper.toResponse(issue);
-    }
-
-    @Override
-    public IssueResponse assignIssue(Long issueId, Long userId) {
-
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-        boolean isMember = projectRepository
-                .existsByIdAndMembers_Id(issue.getProject().getId(), userId);
-
-        if (!isMember) {
-            throw new UnauthorizedActionException("User not part of project");
-        }
-
-        issue.setAssignee(user);
+        issue.setCreator(user);
+        issue.setStatus(IssueStatus.OPEN);
 
         return issueMapper.toResponse(issueRepository.save(issue));
     }
 
+    // ---------------- GET ISSUE ----------------
     @Override
-    public IssueResponse updateStatus(Long issueId, IssueStatus status, Long userId) {
+    public IssueResponse getIssueById(Long issueId, User user) {
 
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
 
-        if (issue.getAssignee() == null ||
-                !issue.getAssignee().getId().equals(userId)) {
-            throw new UnauthorizedActionException("Only assignee can update status");
+        authorizationService.canViewIssue(user, issue);
+
+        return issueMapper.toResponse(issue);
+    }
+
+    // ---------------- GET PROJECT ISSUES ----------------
+    @Override
+    public Page<IssueResponse> getProjectIssues(Long projectId, int page, int size, User user) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+
+        authorizationService.canViewProject(user, project);
+
+        return issueRepository.findByProjectId(
+                        projectId,
+                        org.springframework.data.domain.PageRequest.of(page, size)
+                )
+                .map(issueMapper::toResponse);
+    }
+
+    // ---------------- ASSIGN ISSUE ----------------
+    @Override
+    public IssueResponse assignIssue(Long issueId, Long assigneeId, User currentUser) {
+
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
+
+        authorizationService.canAssignIssue(currentUser, issue);
+
+        User assignee = userRepository.findById(assigneeId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        // Ensure assignee is part of project
+        if (!issue.getProject().getMembers().contains(assignee)) {
+            throw new IllegalArgumentException("Assignee must be a project member");
         }
 
-        IssueStatus current = issue.getStatus();
+        issue.setAssignee(assignee);
 
-        if (current == IssueStatus.OPEN && status == IssueStatus.DONE) {
-            throw new InvalidStatusTransitionException("Invalid transition");
-        }
+        return issueMapper.toResponse(issueRepository.save(issue));
+    }
 
-        if (current == IssueStatus.DONE) {
-            throw new InvalidStatusTransitionException("Already completed");
-        }
+    // ---------------- UPDATE STATUS ----------------
+    @Override
+    public IssueResponse updateStatus(Long issueId, IssueStatus status, User user) {
 
-        if (current == IssueStatus.IN_PROGRESS && status == IssueStatus.OPEN) {
-            throw new InvalidStatusTransitionException("Cannot revert");
-        }
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
+
+        authorizationService.canUpdateIssueStatus(user, issue);
+
+        validateStatusTransition(issue.getStatus(), status);
 
         issue.setStatus(status);
 
         return issueMapper.toResponse(issueRepository.save(issue));
     }
-
     @Override
-    public Page<IssueResponse> getProjectIssues(Long projectId, int page, int size) {
+    public Page<IssueResponse> getMyIssues(User user, int page, int size) {
 
-        return issueRepository.findByProjectId(projectId, PageRequest.of(page, size))
+        return issueRepository.findByAssigneeId(
+                        user.getId(),
+                        org.springframework.data.domain.PageRequest.of(page, size)
+                )
                 .map(issueMapper::toResponse);
     }
 
-    @Override
-    public Page<IssueResponse> getMyIssues(Long userId, int page, int size) {
+    // ---------------- PRIVATE RULE ----------------
+    private void validateStatusTransition(IssueStatus current, IssueStatus next) {
 
-        return issueRepository.findByAssigneeId(userId, PageRequest.of(page, size))
-                .map(issueMapper::toResponse);
+        // Enforce: OPEN → IN_PROGRESS → DONE
+
+        if (current == IssueStatus.OPEN && next == IssueStatus.IN_PROGRESS) return;
+
+        if (current == IssueStatus.IN_PROGRESS && next == IssueStatus.DONE) return;
+
+        if (current == next) return;
+
+        throw new IllegalStateException("Invalid status transition");
     }
-
 }

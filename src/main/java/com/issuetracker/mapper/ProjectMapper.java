@@ -1,6 +1,6 @@
 package com.issuetracker.mapper;
 
-import com.issuetracker.dto.request.CreateProjectRequest;
+import com.issuetracker.dto.request.ProjectRequest;
 import com.issuetracker.dto.response.ProjectResponse;
 import com.issuetracker.entity.Project;
 import com.issuetracker.entity.User;
@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public class ProjectMapper {
 
     // DTO → Entity (basic fields only)
-    public Project toEntity(CreateProjectRequest request) {
+    public Project toEntity(ProjectRequest request) {
         if (request == null) return null;
 
         Project project = new Project();

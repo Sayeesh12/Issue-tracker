@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class CreateProjectRequest {
+public class ProjectRequest {
 
     @NotBlank
     private String name;
