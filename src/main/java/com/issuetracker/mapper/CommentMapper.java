@@ -1,7 +1,6 @@
 package com.issuetracker.mapper;
 
 import com.issuetracker.dto.request.AddCommentRequest;
-import com.issuetracker.dto.request.UpdateCommentRequest;
 import com.issuetracker.dto.response.CommentResponse;
 import com.issuetracker.entity.Comment;
 import org.springframework.stereotype.Component;
@@ -16,7 +15,7 @@ public class CommentMapper {
         Comment comment = new Comment();
         comment.setContent(request.getContent());
 
-        // ❌ DO NOT set author or issue here
+        // ❌ DO NOT set user or issue here (handled in service)
         return comment;
     }
 
@@ -28,17 +27,9 @@ public class CommentMapper {
                 .id(comment.getId())
                 .content(comment.getContent())
                 .issueId(comment.getIssue().getId())
-                .authorId(comment.getAuthor().getId())
-                .authorName(comment.getAuthor().getName())
+                .authorId(comment.getUser().getId())          // ✅ FIXED
+                .authorName(comment.getUser().getName())      // ✅ FIXED
                 .createdAt(comment.getCreatedAt())
                 .build();
-    }
-
-    public void updateEntityFromDto(UpdateCommentRequest request, Comment comment) {
-        if (request == null || comment == null) return;
-
-        if (request.getContent() != null) {
-            comment.setContent(request.getContent());
-        }
     }
 }

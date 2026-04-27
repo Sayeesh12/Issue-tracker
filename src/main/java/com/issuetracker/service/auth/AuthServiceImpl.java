@@ -12,7 +12,6 @@ import com.issuetracker.mapper.UserMapper;
 import com.issuetracker.repository.UserRepository;
 import com.issuetracker.security.JwtService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,12 +62,4 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResponse(token);
     }
 
-    @Override
-    public Long getCurrentUserId(Authentication auth) {
-        String email = auth.getName();
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found"))
-                .getId();
-    }
 }

@@ -35,8 +35,7 @@ public class CommentServiceImpl implements CommentService {
 
         authorizationService.canComment(user, issue);
 
-        Comment comment = new Comment();
-        comment.setContent(request.getContent());
+        Comment comment = commentMapper.toEntity(request);
         comment.setUser(user);
         comment.setIssue(issue);
 

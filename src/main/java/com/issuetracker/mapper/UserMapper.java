@@ -17,8 +17,6 @@ public class UserMapper {
         user.setEmail(request.getEmail());
 
         // ⚠️ password handled in service
-        user.setPassword(request.getPassword());
-
         return user;
     }
 
