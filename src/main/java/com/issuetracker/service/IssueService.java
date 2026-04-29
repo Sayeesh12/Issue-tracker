@@ -1,10 +1,13 @@
 package com.issuetracker.service;
 
 import com.issuetracker.dto.request.CreateIssueRequest;
+import com.issuetracker.dto.response.IssueActivityResponse;
 import com.issuetracker.dto.response.IssueResponse;
 import com.issuetracker.entity.User;
 import com.issuetracker.enums.IssueStatus;
 import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 public interface IssueService {
 
@@ -19,4 +22,7 @@ public interface IssueService {
     Page<IssueResponse> getProjectIssues(Long projectId, int page, int size, User user);
 
     Page<IssueResponse> getMyIssues(User user, int page, int size);
+
+    // ✅ NEW: Activity Logs API
+    List<IssueActivityResponse> getIssueActivities(Long issueId, User user);
 }

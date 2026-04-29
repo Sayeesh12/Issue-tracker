@@ -12,8 +12,6 @@ public class CreateIssueRequest {
 
     private String description;
 
-    @NotNull
-    private Long projectId;
 
     @NotNull
     private String type; // BUG / FEATURE / IMPROVEMENT

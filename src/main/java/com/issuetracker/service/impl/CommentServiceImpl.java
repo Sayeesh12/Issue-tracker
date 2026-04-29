@@ -67,6 +67,6 @@ public class CommentServiceImpl implements CommentService {
         authorizationService.canDeleteComment(user, comment);
 
         comment.setDeleted(true);
-        commentRepository.save(comment);
+        commentRepository.delete(comment);
     }
 }

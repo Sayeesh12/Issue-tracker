@@ -12,6 +12,7 @@ import com.issuetracker.mapper.UserMapper;
 import com.issuetracker.repository.UserRepository;
 import com.issuetracker.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,10 +34,7 @@ public class AuthServiceImpl implements AuthService {
             throw new DuplicateResourceException("Email already exists");
         }
 
-        // ✅ use mapper
         User user = userMapper.toEntity(request);
-
-        // ✅ service responsibility
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.USER);
 
@@ -62,4 +60,17 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResponse(token);
     }
 
+    // 🔥 THIS FIXES YOUR ENTIRE BUG
+    @Override
+    public User getCurrentUser(Authentication authentication) {
+
+        if (authentication == null || authentication.getName() == null) {
+            throw new UserNotFoundException("Unauthenticated user");
+        }
+
+        String email = authentication.getName();
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+    }
 }
