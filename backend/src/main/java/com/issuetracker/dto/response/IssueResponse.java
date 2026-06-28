@@ -17,4 +17,6 @@ public class IssueResponse {
     private Long projectId;
     private Long creatorId;
     private Long assigneeId;
+    private String creatorName;
+    private String assigneeName;
 }

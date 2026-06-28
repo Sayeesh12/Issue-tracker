@@ -29,8 +29,12 @@ public class IssueMapper {
                 .type(issue.getType())
                 .projectId(issue.getProject().getId())
                 .creatorId(issue.getCreator().getId())
+                .creatorName(issue.getCreator().getName())
                 .assigneeId(
                         issue.getAssignee() != null ? issue.getAssignee().getId() : null
+                )
+                .assigneeName(
+                        issue.getAssignee() != null ? issue.getAssignee().getName() : null
                 )
                 .build();
     }

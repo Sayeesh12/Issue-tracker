@@ -1,0 +1,89 @@
+# =============================================================================
+# Issue Tracker — Root .gitignore
+# =============================================================================
+
+# --- Documentation (generated / local prep) ---
+docs/
+
+# --- IDE & editors ---
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Logs ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =============================================================================
+# Backend (Spring Boot / Maven)
+# =============================================================================
+backend/target/
+backend/build/
+backend/out/
+backend/*.class
+backend/.apt_generated
+backend/.classpath
+backend/.factorypath
+backend/.project
+backend/.settings/
+backend/.springBeans
+backend/.sts4-cache
+backend/nbproject/private/
+backend/nbbuild/
+backend/dist/
+backend/nbdist/
+backend/.nb-gradle/
+backend/test-output/
+backend/surefire-reports/
+backend/coverage/
+backend/jacoco.exec
+
+# Maven wrapper JAR (downloaded by wrapper script)
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Secrets & local config — never commit credentials
+backend/src/main/resources/application.properties
+backend/src/main/resources/application.yml
+backend/src/main/resources/application-*.properties
+backend/src/main/resources/application-*.yml
+backend/.env
+.env
+.env.*
+!.env.example
+
+# Keep example config for setup
+!backend/src/main/resources/application.properties.example
+
+# =============================================================================
+# Frontend (React / Vite / Node)
+# =============================================================================
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.cache/
+
+# =============================================================================
+# Root-level build artifacts
+# =============================================================================
+target/
+node_modules/
+dist/

@@ -1,6 +1,7 @@
 package com.issuetracker.mapper;
 
 import com.issuetracker.dto.request.ProjectRequest;
+import com.issuetracker.dto.response.ProjectMemberResponse;
 import com.issuetracker.dto.response.ProjectResponse;
 import com.issuetracker.entity.Project;
 import com.issuetracker.entity.User;
@@ -12,7 +13,6 @@ import java.util.stream.Collectors;
 @Component
 public class ProjectMapper {
 
-    // DTO → Entity (basic fields only)
     public Project toEntity(ProjectRequest request) {
         if (request == null) return null;
 
@@ -23,21 +23,29 @@ public class ProjectMapper {
         return project;
     }
 
-    // Entity → DTO
     public ProjectResponse toResponse(Project project) {
         if (project == null) return null;
+
+        List<ProjectMemberResponse> members = project.getMembers() != null
+                ? project.getMembers().stream()
+                    .map(this::toMemberResponse)
+                    .collect(Collectors.toList())
+                : List.of();
 
         return ProjectResponse.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .description(project.getDescription())
-                .memberIds(
-                        project.getMembers() != null
-                                ? project.getMembers().stream()
-                                  .map(User::getId)
-                                  .collect(Collectors.toList())
-                                : List.of()
-                )
+                .memberIds(members.stream().map(ProjectMemberResponse::getId).collect(Collectors.toList()))
+                .members(members)
+                .build();
+    }
+
+    private ProjectMemberResponse toMemberResponse(User user) {
+        return ProjectMemberResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
                 .build();
     }
 }

@@ -14,4 +14,6 @@ public class ProjectResponse {
     private String description;
 
     private List<Long> memberIds;
+
+    private List<ProjectMemberResponse> members;
 }

@@ -1,6 +1,7 @@
 package com.issuetracker.controller;
 
 import com.issuetracker.dto.request.ProjectRequest;
+import com.issuetracker.dto.request.AddMemberRequest;
 import com.issuetracker.dto.response.ProjectResponse;
 import com.issuetracker.entity.User;
 import com.issuetracker.service.ProjectService;
@@ -84,5 +85,19 @@ public class ProjectController {
         projectService.deleteProject(id, user);
 
         return ResponseEntity.noContent().build();
+    }
+
+    // ---------------- ADD PROJECT MEMBER ----------------
+    @PostMapping("/{id}/members")
+    public ResponseEntity<ProjectResponse> addMember(
+            @PathVariable Long id,
+            @Valid @RequestBody AddMemberRequest request,
+            Authentication authentication
+    ) {
+        User user = authService.getCurrentUser(authentication);
+
+        return ResponseEntity.ok(
+                projectService.addMember(id, request.getEmail(), user)
+        );
     }
 }

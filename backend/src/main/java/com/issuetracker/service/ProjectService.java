@@ -17,4 +17,6 @@ public interface ProjectService {
     ProjectResponse updateProject(Long projectId, ProjectRequest request, User user);
 
     void deleteProject(Long projectId, User user);
+
+    ProjectResponse addMember(Long projectId, String email, User user);
 }
